@@ -61,6 +61,8 @@ function createRepository(data) {
 					</div>
 					<button class="remove"></button></div>`
 	repoContainer.insertAdjacentHTML("beforeend", element);
+	input.value = '';
+	autocompleteBox.innerHTML = '';
 }
 
 async function getDataRepo(e){

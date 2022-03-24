@@ -6,7 +6,7 @@ const baseURL  = `https://api.github.com/`;
 
 
 async function repoRequest(url) {
-	if (input.value) {
+	if (input.value && (/^[a-zA-Zа-яёА-ЯЁ]+(?:[\s.-][a-zA-Zа-яёА-ЯЁ]+)*$/).test(input.value)) {
 		try {
 			await fetch(url).then(res => {
 				res.json().then(res => {

@@ -72,6 +72,8 @@ const repoRequest = async (search) => {
 					`;
             choiseItem.addEventListener("click", deleteRepo, { once: true });
             repoContainer.append(choiseItem);
+						input.value = '';
+						clearList(autocompleteBox);
           },
           { once: true }
         );

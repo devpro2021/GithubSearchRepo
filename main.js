@@ -1,35 +1,35 @@
-const search = document.querySelector('.search');
-const input = search.querySelector('.search__input');
-const autocompleteBox = search.querySelector('.search__autocomplete');
-const repoContainer = document.querySelector('.repos');
+const search = document.querySelector(".search");
+const input = search.querySelector(".search__input");
+const autocompleteBox = search.querySelector(".search__autocomplete");
+const repoContainer = document.querySelector(".repos");
 const baseURL = `https://api.github.com/`;
 
-const repoRequest = async (url) => {
-  if (input.value && /^[a-zA-Zа-яёА-ЯЁ]+(?:[\s.-][a-zA-Zа-яёА-ЯЁ]+)*$/.test(input.value)) {
-    try {
-      await fetch(url).then((res) => {
-        res.json().then((res) => {
-          autocompleteBox.innerHTML = createList(res.items);
-        });
-      });
-    } catch (e) {
-      console.error(e);
-    }
+input.addEventListener(
+  "input",
+  debounce(() => {
+    clearList(autocompleteBox);
+    searchRepo(input.value);
+  }, 300)
+);
+
+function clearList(namelist) {
+  namelist.innerHTML = "";
+}
+
+function searchRepo(value) {
+	value = value.trim();
+  if (!value) {
+    clearList(autocompleteBox);
   } else {
-    autocompleteBox.innerHTML = '';
+    try {
+      repoRequest(value);
+    } catch (e) {
+      console.log("Error fetch" + e);
+    }
   }
-};
+}
 
-const createList = (arr) => {
-  return arr
-    .reduce((acc, repo) => {
-      acc.push(`<li>${repo.name}</li>`);
-      return acc;
-    }, [])
-    .join('');
-};
-
-const debounce = (func, wait, immediate) => {
+function debounce(func, wait, immediate) {
   let timeout;
 
   return function executedFunction() {
@@ -49,42 +49,52 @@ const debounce = (func, wait, immediate) => {
 
     if (callNow) func.apply(context, args);
   };
-};
+}
 
-const createRepository = (data) => {
-  let element = `<div class="repos__item repo">
-					<div class="repo__info">
-						<p class="repo_name">Name: ${data.items[0].name}</p>
-						<p class="repo_owner">Owner: ${data.items[0].owner.login}</p>
-						<p class="repo_stars">Stars: ${data.items[0].stargazers_count}</p>
+const repoRequest = async (search) => {
+  return await fetch(
+    `${baseURL}search/repositories?q=${search}&per_page=5`
+  ).then((res) => {
+    res.json().then((res) => {
+      res.items.forEach((item) => {
+				const listItem = createElement('li', `${item.name}`);
+				listItem.addEventListener(
+          "click",
+          () => {
+            const choiseItem = createElement("div", "", "repo");
+            choiseItem.innerHTML = `
+						<div class="repo__info">
+						<p class="repo_name">Name: ${item.name}</p>
+						<p class="repo_owner">Owner: ${item.owner.login}</p>
+						<p class="repo_stars">Stars: ${item.stargazers_count}</p>
 					</div>
-					<button class="remove"></button></div>`;
-  repoContainer.insertAdjacentHTML('beforeend', element);
-  input.value = '';
-  autocompleteBox.innerHTML = '';
+					<button class="remove"></button>
+					`;
+            choiseItem.addEventListener("click", deleteRepo, { once: true });
+            repoContainer.append(choiseItem);
+          },
+          { once: true }
+        );
+				autocompleteBox.append(listItem);
+			})
+    });
+  });
 };
 
-const getDataRepo = async (e) => {
-  if (e.target.tagName === 'LI') {
-    try {
-      await fetch(`${baseURL}search/repositories?q=${e.target.textContent}&per_page=1`)
-        .then((res) => res.json())
-        .then((data) => createRepository(data));
-    } catch (e) {
-      console.error(e);
-    }
+function createElement(elementTag, innerText, elementClass) {
+  const element = document.createElement(elementTag);
+  if (elementClass) {
+    element.classList.add(elementClass);
   }
-};
+  if (innerText) {
+    element.innerHTML = innerText;
+  }
+  return element;
+}
 
 const deleteRepo = (e) => {
-  if (e.target.className === 'remove') {
-    e.target.closest('.repo').remove();
+  if (e.target.className === "remove") {
+    e.target.closest(".repo").remove();
   }
 };
 
-input.addEventListener(
-  'input',
-  debounce((e) => repoRequest(`${baseURL}search/repositories?q=${e.target.value}&per_page=5`), 180)
-);
-autocompleteBox.addEventListener('click', getDataRepo);
-repoContainer.addEventListener('click', deleteRepo);
